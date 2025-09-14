@@ -74,7 +74,10 @@ pub fn to_json(
     True -> to_json_tuple_flat([], attrs, None, strict)
     _ -> to_json_tuple(attrs, strict)
   }
-  attrs_tuple_list |> json.object |> json.to_string
+  case attrs_tuple_list {
+    [] -> ""
+    a -> a |> json.object |> json.to_string
+  }
 }
 
 fn add_ts_level_msg(
@@ -182,7 +185,10 @@ fn join_key(p: Option(String), k: String) -> String {
 }
 
 fn join_logfmt(a: #(String, String)) -> String {
-  a.0 <> "=" <> a.1
+  case string.contains(a.1, " ") {
+    False -> a.0 <> "=" <> a.1 |> string.replace("\"", "")
+    _ -> a.0 <> "=" <> a.1
+  }
 }
 
 fn level_to_string(l: Level) -> String {

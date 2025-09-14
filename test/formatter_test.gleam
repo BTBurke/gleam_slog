@@ -1,8 +1,16 @@
-import gleam/option.{None, Some}
+import gleam/list
 import gleam/string
 import gleam/time/duration
 import slog/attr
 import slog/formatter
+
+fn json(a: List(attr.Attr), strict strict: Bool, flat flat: Bool) -> String {
+  formatter.to_json(a |> list.reverse, strict:, flat:)
+}
+
+fn logfmt(a: List(attr.Attr), strict strict: Bool) -> String {
+  formatter.to_logfmt(a |> list.reverse, strict:)
+}
 
 pub fn json_simple_test() {
   let ll = [
@@ -10,7 +18,7 @@ pub fn json_simple_test() {
     attr.Int("test", 1),
     attr.String("a", "b"),
   ]
-  assert formatter.json(ll) == Some("{'msg':'test','a':'b','test':1}" |> quote)
+  assert json(ll, False, False) == "{'a':'b','test':1,'msg':'test'}" |> quote
 }
 
 pub fn json_all_types_test() {
@@ -23,11 +31,9 @@ pub fn json_all_types_test() {
     attr.Duration("t_ms", duration.milliseconds(200)),
     attr.Group("g", [attr.Int("h", 1), attr.String("i", "j")]),
   ]
-  assert formatter.json(ll)
-    == Some(
-      "{'msg':'test','g':{'h':1,'i':'j'},'any':'any1','t_ms':200.0,'d':2.4,'c':false,'b':'z','a':1}"
-      |> quote,
-    )
+  assert json(ll, False, False)
+    == "{'g':{'h':1,'i':'j'},'t_ms':200.0,'d':2.4,'c':false,'b':'z','a':1,'msg':'test'}"
+    |> quote
 }
 
 pub fn json_duration_test() {
@@ -38,11 +44,9 @@ pub fn json_duration_test() {
     attr.Duration("t_ms", duration.milliseconds(200)),
     attr.Duration("t_sec", duration.milliseconds(2400)),
   ]
-  assert formatter.json(ll)
-    == Some(
-      "{'t_sec':2.4,'t_ms':200.0,'auto_s':3.2,'auto_ms':4.0}"
-      |> quote,
-    )
+  assert json(ll, False, False)
+    == "{'t_sec':2.4,'t_ms':200.0,'auto_s':3.2,'auto_ms':4.0}"
+    |> quote
 }
 
 pub fn json_groups_test() {
@@ -51,11 +55,9 @@ pub fn json_groups_test() {
     attr.Int("a", 1),
     attr.String("b", "z"),
   ]
-  assert formatter.json(ll)
-    == Some(
-      "{'b':'z','a':1,'c':{'d':2,'e':'f'}}"
-      |> quote,
-    )
+  assert json(ll, strict: False, flat: False)
+    == "{'b':'z','a':1,'c':{'d':2,'e':'f'}}"
+    |> quote
 }
 
 pub fn json_strict_test() {
@@ -66,17 +68,13 @@ pub fn json_strict_test() {
   ]
 
   // lax formatter yields repeated keys
-  assert formatter.json(ll)
-    == Some(
-      "{'a':'z','a':1,'a':{'d':2,'e':'f'}}"
-      |> quote,
-    )
+  assert json(ll, strict: False, flat: False)
+    == "{'a':'z','a':1,'a':{'d':2,'e':'f'}}"
+    |> quote
   // strict formatter allows only one value per key, keeping the last value
-  assert formatter.json_strict(ll)
-    == Some(
-      "{'a':{'d':2,'e':'f'}}"
-      |> quote,
-    )
+  assert json(ll, strict: True, flat: False)
+    == "{'a':{'d':2,'e':'f'}}"
+    |> quote
 }
 
 fn quote(s: String) -> String {
@@ -84,7 +82,7 @@ fn quote(s: String) -> String {
 }
 
 pub fn json_none_test() {
-  assert formatter.json([]) == None
+  assert json([], strict: False, flat: False) == ""
 }
 
 pub fn logfmt_simple_test() {
@@ -93,7 +91,7 @@ pub fn logfmt_simple_test() {
     attr.Int("test", 1),
     attr.String("a", "b"),
   ]
-  assert formatter.logfmt(ll) == Some("msg=test a=b test=1")
+  assert logfmt(ll, strict: False) == "a=b test=1 msg=test"
 }
 
 pub fn logfmt_quote_test() {
@@ -102,8 +100,8 @@ pub fn logfmt_quote_test() {
     attr.Int("test", 1),
     attr.String("a", "b"),
   ]
-  assert formatter.logfmt(ll)
-    == Some("msg=\"a message that should be quoted\" a=b test=1")
+  assert logfmt(ll, strict: False)
+    == "a=b test=1 msg=\"a message that should be quoted\""
 }
 
 pub fn logfmt_all_types_test() {
@@ -114,7 +112,7 @@ pub fn logfmt_all_types_test() {
     attr.Float("d", 2.4),
     attr.Duration("t_ms", duration.milliseconds(200)),
   ]
-  assert formatter.logfmt(ll) == Some("t_ms=200.0 d=2.4 c=false b=z a=1")
+  assert logfmt(ll, strict: False) == "t_ms=200.0 d=2.4 c=false b=z a=1"
 }
 
 pub fn logfmt_duration_test() {
@@ -125,8 +123,8 @@ pub fn logfmt_duration_test() {
     attr.Duration("t_ms", duration.milliseconds(200)),
     attr.Duration("t_sec", duration.milliseconds(2400)),
   ]
-  assert formatter.logfmt(ll)
-    == Some("t_sec=2.4 t_ms=200.0 auto_s=3.2 auto_ms=4.0")
+  assert logfmt(ll, strict: False)
+    == "t_sec=2.4 t_ms=200.0 auto_s=3.2 auto_ms=4.0"
 }
 
 pub fn logfmt_groups_test() {
@@ -136,7 +134,7 @@ pub fn logfmt_groups_test() {
     attr.Int("a", 1),
     attr.String("b", "z"),
   ]
-  assert formatter.logfmt(ll) == Some("msg=test b=z a=1 c.e=f c.d=2")
+  assert logfmt(ll, strict: False) == "b=z a=1 c.e=f c.d=2 msg=test"
 }
 
 pub fn logfmt_strict_test() {
@@ -147,13 +145,13 @@ pub fn logfmt_strict_test() {
   ]
 
   // lax formatter yields repeated keys
-  assert formatter.logfmt(ll) == Some("a=z a=1 a.e=f a.d=2")
+  assert logfmt(ll, strict: False) == "a=z a=1 a.e=f a.d=2"
 
   // strict formatter allows only one value per key, keeping the last value
   // note: this behavior is slightly different than the JSON formatter because of the dotted keys
-  assert formatter.logfmt_strict(ll) == Some("a=1 a.d=2 a.e=f")
+  assert logfmt(ll, strict: True) == "a=1 a.d=2 a.e=f"
 }
 
 pub fn logfmt_none_test() {
-  assert formatter.logfmt([]) == None
+  assert logfmt([], strict: False) == ""
 }
