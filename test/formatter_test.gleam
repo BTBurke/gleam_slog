@@ -1,36 +1,28 @@
-import gleam/json
 import gleam/option.{None, Some}
 import gleam/string
 import gleam/time/duration
 import slog/attr
-import slog/formatter.{LogLine}
+import slog/formatter
 
 pub fn json_simple_test() {
-  let ll =
-    LogLine(msg: Some("test"), ts: None, level: None, attrs: [
-      attr.Int("test", 1),
-      attr.String("a", "b"),
-    ])
+  let ll = [
+    attr.String("msg", "test"),
+    attr.Int("test", 1),
+    attr.String("a", "b"),
+  ]
   assert formatter.json(ll) == Some("{'msg':'test','a':'b','test':1}" |> quote)
 }
 
-type Custom {
-  Custom(a: String)
-}
-
 pub fn json_all_types_test() {
-  let ll =
-    LogLine(msg: Some("test"), ts: None, level: None, attrs: [
-      attr.Int("a", 1),
-      attr.String("b", "z"),
-      attr.Bool("c", False),
-      attr.Float("d", 2.4),
-      attr.Duration("t_ms", duration.milliseconds(200)),
-      attr.Any("any", Custom("any1"), fn(k, v: Custom) {
-        #(k, json.string(v.a))
-      }),
-      attr.Group("g", [attr.Int("h", 1), attr.String("i", "j")]),
-    ])
+  let ll = [
+    attr.String("msg", "test"),
+    attr.Int("a", 1),
+    attr.String("b", "z"),
+    attr.Bool("c", False),
+    attr.Float("d", 2.4),
+    attr.Duration("t_ms", duration.milliseconds(200)),
+    attr.Group("g", [attr.Int("h", 1), attr.String("i", "j")]),
+  ]
   assert formatter.json(ll)
     == Some(
       "{'msg':'test','g':{'h':1,'i':'j'},'any':'any1','t_ms':200.0,'d':2.4,'c':false,'b':'z','a':1}"
@@ -39,14 +31,13 @@ pub fn json_all_types_test() {
 }
 
 pub fn json_duration_test() {
-  let ll =
-    LogLine(msg: None, ts: None, level: None, attrs: [
-      // auto should determine unit
-      attr.Duration("auto", duration.milliseconds(4)),
-      attr.Duration("auto", duration.milliseconds(3200)),
-      attr.Duration("t_ms", duration.milliseconds(200)),
-      attr.Duration("t_sec", duration.milliseconds(2400)),
-    ])
+  let ll = [
+    // auto should determine unit
+    attr.Duration("auto", duration.milliseconds(4)),
+    attr.Duration("auto", duration.milliseconds(3200)),
+    attr.Duration("t_ms", duration.milliseconds(200)),
+    attr.Duration("t_sec", duration.milliseconds(2400)),
+  ]
   assert formatter.json(ll)
     == Some(
       "{'t_sec':2.4,'t_ms':200.0,'auto_s':3.2,'auto_ms':4.0}"
@@ -55,26 +46,24 @@ pub fn json_duration_test() {
 }
 
 pub fn json_groups_test() {
-  let ll =
-    LogLine(msg: Some("test"), ts: None, level: None, attrs: [
-      attr.Group("c", [attr.Int("d", 2), attr.String("e", "f")]),
-      attr.Int("a", 1),
-      attr.String("b", "z"),
-    ])
+  let ll = [
+    attr.Group("c", [attr.Int("d", 2), attr.String("e", "f")]),
+    attr.Int("a", 1),
+    attr.String("b", "z"),
+  ]
   assert formatter.json(ll)
     == Some(
-      "{'msg':'test','b':'z','a':1,'c':{'d':2,'e':'f'}}"
+      "{'b':'z','a':1,'c':{'d':2,'e':'f'}}"
       |> quote,
     )
 }
 
 pub fn json_strict_test() {
-  let ll =
-    LogLine(msg: None, ts: None, level: None, attrs: [
-      attr.Group("a", [attr.Int("d", 2), attr.String("e", "f")]),
-      attr.Int("a", 1),
-      attr.String("a", "z"),
-    ])
+  let ll = [
+    attr.Group("a", [attr.Int("d", 2), attr.String("e", "f")]),
+    attr.Int("a", 1),
+    attr.String("a", "z"),
+  ]
 
   // lax formatter yields repeated keys
   assert formatter.json(ll)
@@ -95,80 +84,67 @@ fn quote(s: String) -> String {
 }
 
 pub fn json_none_test() {
-  let ll = LogLine(msg: None, ts: None, level: None, attrs: [])
-  assert formatter.json(ll) == None
+  assert formatter.json([]) == None
 }
 
 pub fn logfmt_simple_test() {
-  let ll =
-    LogLine(msg: Some("test"), ts: None, level: None, attrs: [
-      attr.Int("test", 1),
-      attr.String("a", "b"),
-    ])
+  let ll = [
+    attr.String("msg", "test"),
+    attr.Int("test", 1),
+    attr.String("a", "b"),
+  ]
   assert formatter.logfmt(ll) == Some("msg=test a=b test=1")
 }
 
 pub fn logfmt_quote_test() {
-  let ll =
-    LogLine(
-      msg: Some("a message that should be quoted"),
-      ts: None,
-      level: None,
-      attrs: [
-        attr.Int("test", 1),
-        attr.String("a", "b"),
-      ],
-    )
+  let ll = [
+    attr.String("msg", "a message that should be quoted"),
+    attr.Int("test", 1),
+    attr.String("a", "b"),
+  ]
   assert formatter.logfmt(ll)
     == Some("msg=\"a message that should be quoted\" a=b test=1")
 }
 
 pub fn logfmt_all_types_test() {
-  let ll =
-    LogLine(msg: Some("test"), ts: None, level: None, attrs: [
-      attr.Int("a", 1),
-      attr.String("b", "z"),
-      attr.Bool("c", False),
-      attr.Float("d", 2.4),
-      attr.Duration("t_ms", duration.milliseconds(200)),
-      attr.Any("any", Custom("any1"), fn(k, v: Custom) {
-        #(k, json.string(v.a))
-      }),
-    ])
-  assert formatter.logfmt(ll)
-    == Some("msg=test any=any1 t_ms=200.0 d=2.4 c=false b=z a=1")
+  let ll = [
+    attr.Int("a", 1),
+    attr.String("b", "z"),
+    attr.Bool("c", False),
+    attr.Float("d", 2.4),
+    attr.Duration("t_ms", duration.milliseconds(200)),
+  ]
+  assert formatter.logfmt(ll) == Some("t_ms=200.0 d=2.4 c=false b=z a=1")
 }
 
 pub fn logfmt_duration_test() {
-  let ll =
-    LogLine(msg: None, ts: None, level: None, attrs: [
-      // auto should determine unit
-      attr.Duration("auto", duration.milliseconds(4)),
-      attr.Duration("auto", duration.milliseconds(3200)),
-      attr.Duration("t_ms", duration.milliseconds(200)),
-      attr.Duration("t_sec", duration.milliseconds(2400)),
-    ])
+  let ll = [
+    // auto should determine unit
+    attr.Duration("auto", duration.milliseconds(4)),
+    attr.Duration("auto", duration.milliseconds(3200)),
+    attr.Duration("t_ms", duration.milliseconds(200)),
+    attr.Duration("t_sec", duration.milliseconds(2400)),
+  ]
   assert formatter.logfmt(ll)
     == Some("t_sec=2.4 t_ms=200.0 auto_s=3.2 auto_ms=4.0")
 }
 
 pub fn logfmt_groups_test() {
-  let ll =
-    LogLine(msg: Some("test"), ts: None, level: None, attrs: [
-      attr.Group("c", [attr.Int("d", 2), attr.String("e", "f")]),
-      attr.Int("a", 1),
-      attr.String("b", "z"),
-    ])
+  let ll = [
+    attr.String("msg", "test"),
+    attr.Group("c", [attr.Int("d", 2), attr.String("e", "f")]),
+    attr.Int("a", 1),
+    attr.String("b", "z"),
+  ]
   assert formatter.logfmt(ll) == Some("msg=test b=z a=1 c.e=f c.d=2")
 }
 
 pub fn logfmt_strict_test() {
-  let ll =
-    LogLine(msg: None, ts: None, level: None, attrs: [
-      attr.Group("a", [attr.Int("d", 2), attr.String("e", "f")]),
-      attr.Int("a", 1),
-      attr.String("a", "z"),
-    ])
+  let ll = [
+    attr.Group("a", [attr.Int("d", 2), attr.String("e", "f")]),
+    attr.Int("a", 1),
+    attr.String("a", "z"),
+  ]
 
   // lax formatter yields repeated keys
   assert formatter.logfmt(ll) == Some("a=z a=1 a.e=f a.d=2")
@@ -179,6 +155,5 @@ pub fn logfmt_strict_test() {
 }
 
 pub fn logfmt_none_test() {
-  let ll = LogLine(msg: None, ts: None, level: None, attrs: [])
-  assert formatter.logfmt(ll) == None
+  assert formatter.logfmt([]) == None
 }

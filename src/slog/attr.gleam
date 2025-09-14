@@ -5,22 +5,18 @@ import gleam/pair
 import gleam/string
 import gleam/time/duration
 
-pub type Attr(value) {
+pub type Attr {
   String(k: String, v: String)
   Int(k: String, v: Int)
   Float(k: String, v: Float)
   Bool(k: String, v: Bool)
   Duration(k: String, v: duration.Duration)
-  Any(k: String, v: value, enc_json: fn(String, value) -> #(String, json.Json))
-  Group(k: String, v: List(Attr(value)))
+  Group(k: String, v: List(Attr))
 }
 
-pub fn to_tuple_string(
-  a: Attr(value),
-  path: Option(String),
-) -> #(String, String) {
+pub fn to_string_tuple(a: Attr, path: Option(String)) -> #(String, String) {
   let value =
-    to_tuple_json(a)
+    to_json_tuple(a)
     |> pair.map_second(json.to_string)
     |> pair.map_second(unquote)
 
@@ -30,15 +26,14 @@ pub fn to_tuple_string(
   }
 }
 
-pub fn to_tuple_json(a: Attr(value)) -> #(String, json.Json) {
+pub fn to_json_tuple(a: Attr) -> #(String, json.Json) {
   case a {
     Int(k, v) -> #(k, json.int(v))
     String(k, v) -> #(k, json.string(v))
     Float(k, v) -> #(k, json.float(v))
     Bool(k, v) -> #(k, json.bool(v))
     Duration(k, v) -> duration_to_float(k, v) |> pair.map_second(json.float)
-    Any(k, v, enc) -> enc(k, v)
-    Group(k, v) -> #(k, v |> list.map(to_tuple_json) |> json.object)
+    Group(k, v) -> #(k, v |> list.map(to_json_tuple) |> json.object)
   }
 }
 
