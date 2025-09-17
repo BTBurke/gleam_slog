@@ -5,14 +5,14 @@ import gleam/result
 import gleam/string
 import gleam/time/calendar
 import gleam/time/timestamp.{type Timestamp}
+import slog.{type Level}
 import slog/attr.{type Attr}
 import slog/internal/formatter
-import slog/logger.{type Level}
 
 /// Function that takes required elements of the log state and returns a formatted log line
 ///
 pub type Formatter =
-  logger.Formatter
+  slog.Formatter
 
 /// Configuration builder to control formatting options
 ///
@@ -91,12 +91,12 @@ pub type DurationFormat {
 ///
 /// # Defaults
 ///
-/// - Formatter is strict. Last write wins for multiple attributes with the same key.
-/// - Keys are flattened when using attribute groups.  For example, `Group("a", Int("b", 1))` would yield a key of `a.b` for both JSON and logfmt.  When `flatten_keys=False`, the JSON version would yield `a: {b: 1}`.  Logfmt is always flattened per the spec and would yield `a.b=1`.
-/// - The key for the timestamp is `time`.  Set a different with [time_key](#time_key).
-/// - The key for the log message is `msg`.  Set a different key with [msg_key](#msg_key).
-/// - The key for level is `level`. Set a different key with [level_key](#level_key).
-/// - Time format is RFC3339. Set a different format with [time_format](#time_format).
+/// * Formatter is strict. Last write wins for multiple attributes with the same key.
+/// * Keys are flattened when using attribute groups.  For example, `Group("a", Int("b", 1))` would yield a key of `a.b` for both JSON and logfmt.  When `flatten_keys=False`, the JSON version would yield `a: {b: 1}`.  Logfmt is always flattened per the spec and would yield `a.b=1`.
+/// * The key for the timestamp is `time`.  Set a different with [time_key](#time_key).
+/// * The key for the log message is `msg`.  Set a different key with [msg_key](#msg_key).
+/// * The key for level is `level`. Set a different key with [level_key](#level_key).
+/// * Time format is RFC3339. Set a different format with [time_format](#time_format).
 ///
 /// # Schemas
 ///
@@ -378,9 +378,9 @@ pub fn terminal(config: Configuration) -> Formatter {
       |> formatter.to_logfmt(strict: True)
 
     let formatted_level = case level {
-      logger.ERROR -> level |> level_to_string |> red
-      logger.WARN -> level |> level_to_string |> yellow
-      logger.DEBUG -> level |> level_to_string |> pink
+      slog.ERROR -> level |> level_to_string |> red
+      slog.WARN -> level |> level_to_string |> yellow
+      slog.DEBUG -> level |> level_to_string |> pink
       _ -> level |> level_to_string
     }
     let full_width =
@@ -441,10 +441,10 @@ fn bold(s: String) -> String {
 
 fn level_to_string(l: Level) -> String {
   case l {
-    logger.ALL -> "ALL"
-    logger.ERROR -> "ERROR"
-    logger.WARN -> "WARN"
-    logger.INFO -> "INFO"
-    logger.DEBUG -> "DEBUG"
+    slog.ALL -> "ALL"
+    slog.ERROR -> "ERROR"
+    slog.WARN -> "WARN"
+    slog.INFO -> "INFO"
+    slog.DEBUG -> "DEBUG"
   }
 }
