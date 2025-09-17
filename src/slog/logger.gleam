@@ -1,6 +1,4 @@
 import gleam/list
-import gleam/option.{type Option, None, Some}
-import gleam/time/calendar
 import gleam/time/timestamp.{type Timestamp}
 import slog/attr
 

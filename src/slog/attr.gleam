@@ -37,13 +37,13 @@ pub fn to_json_tuple(a: Attr) -> #(String, json.Json) {
   }
 }
 
-fn duration_to_float(k: String, v: duration.Duration) -> #(String, Float) {
+pub fn duration_to_float(k: String, v: duration.Duration) -> #(String, Float) {
   let to_msec = fn(n: Float) { n *. 1000.0 }
   let to_usec = fn(n: Float) { n *. 1_000_000.0 }
 
   // gleam can only match on string prefixes, so we reverse it and look for units listed
   // at the end of the key backwards
-  case string.reverse(k) {
+  case string.reverse(k) |> string.lowercase {
     // second (s, sec)
     "s_" <> _ -> #(k, v |> duration.to_seconds)
     "ces_" <> _ -> #(k, v |> duration.to_seconds)

@@ -1,8 +1,13 @@
+import gleam/int
 import gleam/list
+import gleam/result
 import gleam/string
 import gleam/time/duration
+import gleam/time/timestamp
 import slog/attr
-import slog/formatter
+import slog/format
+import slog/internal/formatter
+import slog/logger
 
 fn json(a: List(attr.Attr), strict strict: Bool, flat flat: Bool) -> String {
   formatter.to_json(a |> list.reverse, strict:, flat:)
@@ -154,4 +159,41 @@ pub fn logfmt_strict_test() {
 
 pub fn logfmt_none_test() {
   assert logfmt([], strict: False) == ""
+}
+
+// tests the algorithm for conversion back and forth from unix nano
+pub fn unixnano_test() {
+  let ts = timestamp.system_time()
+  let as_string =
+    ts
+    |> timestamp.to_unix_seconds_and_nanoseconds()
+    |> fn(a) {
+      a.0 |> int.to_string
+      <> a.1 |> int.to_string |> string.pad_start(to: 9, with: "0")
+    }
+  let nano_part =
+    as_string
+    |> string.slice(at_index: -9, length: 9)
+    |> int.parse
+    |> result.unwrap(0)
+  let sec_part =
+    as_string |> string.drop_end(up_to: 9) |> int.parse |> result.unwrap(0)
+
+  assert ts == timestamp.from_unix_seconds_and_nanoseconds(sec_part, nano_part)
+}
+
+fn ts0() -> timestamp.Timestamp {
+  timestamp.from_unix_seconds(0)
+}
+
+pub fn terminal_test() {
+  let terminal_formatter =
+    format.configure() |> format.terminal_colors(False) |> format.terminal
+  let a = [
+    attr.String("service", "frobulator"),
+    attr.Int("retries", 99),
+  ]
+  let logline =
+    terminal_formatter(ts0(), logger.ERROR, "something went wrong", a)
+  assert logline == "ERROR  something went wrong  retries=99 service=frobulator"
 }
