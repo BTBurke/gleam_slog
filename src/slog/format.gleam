@@ -267,7 +267,7 @@ fn add_ts_level_msg(
         )
       NoTimestamp -> attr.String("", "")
     },
-    attr.String(level_key, level |> level_to_string),
+    attr.String(level_key, level |> formatter.level_to_string),
     attr.String(msg_key, msg),
     ..a
   ]
@@ -378,15 +378,15 @@ pub fn terminal(config: Configuration) -> Formatter {
       |> formatter.to_logfmt(strict: True)
 
     let formatted_level = case level {
-      slog.ERROR -> level |> level_to_string |> red
-      slog.WARN -> level |> level_to_string |> yellow
-      slog.DEBUG -> level |> level_to_string |> pink
-      _ -> level |> level_to_string
+      slog.ERROR -> level |> formatter.level_to_string |> red
+      slog.WARN -> level |> formatter.level_to_string |> yellow
+      slog.DEBUG -> level |> formatter.level_to_string |> pink
+      _ -> level |> formatter.level_to_string
     }
     let full_width =
       case config.terminal_colors {
         True -> formatted_level
-        _ -> level |> level_to_string
+        _ -> level |> formatter.level_to_string
       }
       |> string.pad_end(to: 5, with: " ")
       <> separator
@@ -437,14 +437,4 @@ fn yellow(s: String) -> String {
 
 fn bold(s: String) -> String {
   code([1]) <> s <> code([22])
-}
-
-fn level_to_string(l: Level) -> String {
-  case l {
-    slog.ALL -> "ALL"
-    slog.ERROR -> "ERROR"
-    slog.WARN -> "WARN"
-    slog.INFO -> "INFO"
-    slog.DEBUG -> "DEBUG"
-  }
 }

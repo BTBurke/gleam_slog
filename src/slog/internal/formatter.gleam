@@ -4,6 +4,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/pair
 import gleam/string
+import slog
 import slog/attr.{type Attr}
 
 /// Create a JSON-formatted string from a list of attributes.  You should not need to call this directly.
@@ -101,5 +102,15 @@ fn join_logfmt(a: #(String, String)) -> String {
   case string.contains(a.1, " ") {
     False -> a.0 <> "=" <> a.1 |> string.replace("\"", "")
     _ -> a.0 <> "=" <> a.1
+  }
+}
+
+pub fn level_to_string(l: slog.Level) -> String {
+  case l {
+    slog.ALL -> "ALL"
+    slog.ERROR -> "ERROR"
+    slog.WARN -> "WARN"
+    slog.INFO -> "INFO"
+    slog.DEBUG -> "DEBUG"
   }
 }
