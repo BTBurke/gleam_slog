@@ -202,7 +202,7 @@ pub fn terminal_test() {
 }
 
 pub fn fileinfo_test() {
-  let a = sink.file_info("./test/formattertest.gleam")
+  let a = sink.do_file_info("./test/formattertest.gleam")
   let size = case a {
     Ok(a) -> {
       decode.run(a, decode.at([1], decode.int))
