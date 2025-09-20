@@ -131,7 +131,8 @@ pub fn configure() -> Configuration {
 }
 
 /// Strict mode removes duplicate keys with last write wins.  If group keys are flattened, a duplicate is removed only
-/// if the entire flattened path matches.
+/// if the entire flattened path matches.  This option is ignored for Javascript, as objects
+/// are always strict.
 ///
 pub fn strict(config: Configuration, which: Bool) -> Configuration {
   Config(..config, strict: which)
