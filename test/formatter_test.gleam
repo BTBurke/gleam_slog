@@ -1,4 +1,5 @@
 import gleam/dynamic/decode
+import gleam/erlang/atom
 import gleam/int
 import gleam/io
 import gleam/list
@@ -199,16 +200,4 @@ pub fn terminal_test() {
   ]
   let logline = terminal_formatter(ts0(), slog.ERROR, "something went wrong", a)
   assert logline == "ERROR  something went wrong  retries=99 service=frobulator"
-}
-
-pub fn fileinfo_test() {
-  let a = sink.do_file_info("./test/formattertest.gleam")
-  let size = case a {
-    Ok(a) -> {
-      decode.run(a, decode.at([1], decode.int))
-      |> option.from_result
-    }
-    _ -> option.None
-  }
-  echo size
 }
