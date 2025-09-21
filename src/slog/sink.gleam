@@ -41,8 +41,11 @@ fn do_stderr(s: String, _level: String) -> Nil {
   Nil
 }
 
+pub type PosixError =
+  file_stream_error.FileStreamError
+
 pub type FileError {
-  FileError(msg: String, posix: FileStreamError)
+  FileError(msg: String, posix: PosixError)
 }
 
 pub opaque type Configuration {

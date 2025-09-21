@@ -232,7 +232,13 @@ pub fn json(config: Configuration) -> Formatter {
         level_key:,
         time_format:,
       )
-    attrs |> formatter.to_json(strict:, flat:)
+    echo attrs
+    attrs
+    |> formatter.to_json(strict:, flat:, sort_order: [
+      time_key,
+      level_key,
+      msg_key,
+    ])
   }
 }
 
@@ -270,8 +276,8 @@ fn add_ts_level_msg(
     },
     attr.String(level_key, level |> formatter.level_to_string),
     attr.String(msg_key, msg),
-    ..a
   ]
+  |> list.append(a)
   // remove empty keys
   |> list.filter(fn(a) { a.k != "" })
 }
@@ -347,7 +353,8 @@ pub fn logfmt(config: Configuration) -> Formatter {
         level_key:,
         time_format:,
       )
-    attrs |> formatter.to_logfmt(strict:)
+    attrs
+    |> formatter.to_logfmt(strict:, sort_order: [time_key, level_key, msg_key])
   }
 }
 
@@ -376,7 +383,7 @@ pub fn terminal(config: Configuration) -> Formatter {
       attrs
       |> list.reverse
       |> list.map(format_duration(format: ValueWithUnits))
-      |> formatter.to_logfmt(strict: True)
+      |> formatter.to_logfmt(strict: True, sort_order: [])
 
     let formatted_level = case level {
       slog.ERROR -> level |> formatter.level_to_string |> red
