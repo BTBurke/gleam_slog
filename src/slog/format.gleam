@@ -219,21 +219,11 @@ pub fn json(config: Configuration) -> Formatter {
       _width,
       _colors,
     ) = config
-    let attrs =
-      attrs
-      |> list.reverse
-      |> list.map(format_duration(format: duration_format))
-      |> add_ts_level_msg(
-        ts,
-        level,
-        msg,
-        time_key:,
-        msg_key:,
-        level_key:,
-        time_format:,
-      )
-    echo attrs
     attrs
+    |> list.map(format_duration(format: duration_format))
+    |> add_timestamp(ts, time_key:, time_format:)
+    |> add_level(level, level_key:)
+    |> add_message(msg, msg_key:)
     |> formatter.to_json(strict:, flat:, sort_order: [
       time_key,
       level_key,
@@ -242,44 +232,57 @@ pub fn json(config: Configuration) -> Formatter {
   }
 }
 
-// adds a timestamp, level, and msg as attributes to the logger using config options to determine formats
-fn add_ts_level_msg(
+// adds a timestamp attribute
+fn add_timestamp(
   a: List(Attr),
   ts: Timestamp,
-  level: Level,
-  msg: String,
   time_key time_key: String,
-  msg_key msg_key: String,
-  level_key level_key: String,
   time_format time_format: TimeFormat,
 ) -> List(Attr) {
-  [
-    case time_format {
-      RFC3339 ->
-        attr.String(time_key, ts |> timestamp.to_rfc3339(calendar.utc_offset))
-      UnixSeconds ->
-        attr.String(
-          time_key,
-          ts |> timestamp.to_unix_seconds() |> float.to_string,
-        )
-      UnixNanoseconds ->
-        attr.String(
-          time_key,
-          ts
-            |> timestamp.to_unix_seconds_and_nanoseconds()
-            |> fn(a) {
-              a.0 |> int.to_string
-              <> a.1 |> int.to_string |> string.pad_start(to: 9, with: "0")
-            },
-        )
-      NoTimestamp -> attr.String("", "")
-    },
-    attr.String(level_key, level |> formatter.level_to_string),
-    attr.String(msg_key, msg),
-  ]
-  |> list.append(a)
-  // remove empty keys
-  |> list.filter(fn(a) { a.k != "" })
+  case time_format {
+    RFC3339 -> [
+      attr.String(time_key, ts |> timestamp.to_rfc3339(calendar.utc_offset)),
+      ..a
+    ]
+    UnixSeconds -> [
+      attr.String(
+        time_key,
+        ts |> timestamp.to_unix_seconds() |> float.to_string,
+      ),
+      ..a
+    ]
+    UnixNanoseconds -> [
+      attr.String(
+        time_key,
+        ts
+          |> timestamp.to_unix_seconds_and_nanoseconds()
+          |> fn(a) {
+            a.0 |> int.to_string
+            <> a.1 |> int.to_string |> string.pad_start(to: 9, with: "0")
+          },
+      ),
+      ..a
+    ]
+    NoTimestamp -> a
+  }
+}
+
+// adds a level as an attribute
+fn add_level(
+  a: List(Attr),
+  level: Level,
+  level_key level_key: String,
+) -> List(Attr) {
+  [attr.String(level_key, level |> formatter.level_to_string), ..a]
+}
+
+// adds a message as an attribute
+fn add_message(
+  a: List(Attr),
+  msg: String,
+  msg_key msg_key: String,
+) -> List(Attr) {
+  [attr.String(msg_key, msg), ..a]
 }
 
 // formats duration attributes according to config option
@@ -337,23 +340,11 @@ pub fn logfmt(config: Configuration) -> Formatter {
       _width,
       _colors,
     ) = config
-    let attrs =
-      attrs
-      // preserve insertion order in output
-      |> list.reverse
-      // convert durations to appropriate format
-      |> list.map(format_duration(format: duration_format))
-      // add timestamp, level, msg as formatter attrs according to options
-      |> add_ts_level_msg(
-        ts,
-        level,
-        msg,
-        time_key:,
-        msg_key:,
-        level_key:,
-        time_format:,
-      )
     attrs
+    |> list.map(format_duration(format: duration_format))
+    |> add_timestamp(ts, time_key:, time_format:)
+    |> add_level(level, level_key:)
+    |> add_message(msg, msg_key:)
     |> formatter.to_logfmt(strict:, sort_order: [time_key, level_key, msg_key])
   }
 }
@@ -381,7 +372,6 @@ pub fn terminal(config: Configuration) -> Formatter {
     let separator = "  "
     let formatted_attrs =
       attrs
-      |> list.reverse
       |> list.map(format_duration(format: ValueWithUnits))
       |> formatter.to_logfmt(strict: True, sort_order: [])
 

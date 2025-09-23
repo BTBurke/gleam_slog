@@ -9,7 +9,7 @@ import gleam/string
 import slog
 import slog/attr.{type Attr}
 
-/// Create a JSON-formatted string from a list of attributes.  You should not need to call this directly.
+/// Create a JSON-formatted string from a list of attributes
 ///
 pub fn to_json(
   attrs: List(Attr),
@@ -23,7 +23,6 @@ pub fn to_json(
       _ -> to_json_tuple(attrs, strict)
     }
     |> sort(sort_keys:)
-  echo attrs_tuple_list
   case attrs_tuple_list {
     [] -> ""
     a -> a |> json.object |> json.to_string
@@ -51,8 +50,7 @@ fn sort(
   })
 }
 
-/// Convert a list of attributes to a `#(String, JSON)` pair.  You should not need to call this directly, but it
-/// may be a useful intermediate data structure if developing a custom formatter.
+/// Convert a list of attributes to a `#(String, JSON)` pair
 ///
 pub fn to_json_tuple(attrs: List(Attr), strict: Bool) -> List(#(String, Json)) {
   // strictness is defined as the removal of repeated keys, keeping only the last value for each unique key
@@ -62,7 +60,7 @@ pub fn to_json_tuple(attrs: List(Attr), strict: Bool) -> List(#(String, Json)) {
   }
 }
 
-/// Create a Logfmt-formatted string from a list of attributes.  You should not need to call this directly.
+/// Create a Logfmt-formatted string from a list of attributes
 ///
 pub fn to_logfmt(
   attrs: List(Attr),
@@ -76,8 +74,7 @@ pub fn to_logfmt(
   |> string.join(" ")
 }
 
-/// Convert a list of attributes to a `#(String, String)` pair.  You should not need to call this directly, but it
-/// may be a useful intermediate data structure if developing a custom formatter.
+/// Convert a list of attributes to a `#(String, String)` pair
 ///
 pub fn to_string_tuple(
   attrs: List(Attr),
@@ -87,8 +84,7 @@ pub fn to_string_tuple(
   |> list.map(fn(a) { #(a.0, a.1 |> json.to_string) })
 }
 
-/// Convert a list of attributes to a `#(String, JSON)` pair with grouped or nested keys flattened.  You should not need to call this directly, but it
-/// may be a useful intermediate data structure if developing a custom formatter.
+/// Convert a list of attributes to a `#(String, JSON)` pair with grouped or nested keys flattened
 ///
 pub fn to_json_tuple_flat(
   acc: List(#(String, Json)),
